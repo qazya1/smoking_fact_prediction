@@ -40,7 +40,6 @@ app = FastAPI(
     description="Определяет, курит ли человек, по биомедицинским показателям.",
     version="1.0.0",
     lifespan=lifespan,
-    debug=True
 )
 
 # ---------------------------------------------------------------------------
@@ -160,10 +159,10 @@ async def send_data(data: SmokingInput):
       была отфильтрована уже внутри `_transform_features`).
     """
     df = to_dataframe(data)
-    #try:
-    result = pipeline.predict(df)
-    #except Exception as exc:
-    #    raise HTTPException(status_code=500, detail=str(exc)) from exc
+    try:
+        result = pipeline.predict(df)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     if result.empty:
         raise HTTPException(
