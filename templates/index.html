@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smoking Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0d0d0f;
+      --surface:   #17181c;
+      --border:    #2a2b30;
+      --accent:    #e8ff47;
+      --danger:    #ff4757;
+      --success:   #2ed573;
+      --muted:     #6b6d76;
+      --text:      #e8e9ed;
+      --label:     #9a9ca6;
+      --mono:      "IBM Plex Mono", monospace;
+      --sans:      "IBM Plex Sans", sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 80px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      background: rgba(232,255,71,0.08);
+      border: 1px solid rgba(232,255,71,0.25);
+      padding: 4px 12px;
+      border-radius: 2px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(28px, 5vw, 44px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--text);
+    }
+    h1 span { color: var(--accent); }
+    .subtitle {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 300;
+      letter-spacing: 0.02em;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 720px;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+      margin-top: 32px;
+    }
+    .section-label:first-of-type { margin-top: 0; }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 24px;
+    }
+    .grid.wide { grid-template-columns: 1fr; }
+    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+    /* Field */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--label);
+      letter-spacing: 0.04em;
+    }
+    .field .hint {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    input, select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 10px 12px;
+      width: 100%;
+      transition: border-color 0.15s;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    input.error, select.error { border-color: var(--danger); }
+    select option { background: var(--surface); }
+
+    /* Submit button */
+    .btn {
+      margin-top: 32px;
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #0d0d0f;
+      border: none;
+      border-radius: 3px;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover  { opacity: 0.88; }
+    .btn:active { transform: scale(0.99); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Result panel */
+    #result {
+      margin-top: 24px;
+      border-radius: 4px;
+      padding: 24px 28px;
+      display: none;
+      border-left: 4px solid transparent;
+    }
+    #result.show { display: block; }
+    #result.smoking  { border-color: var(--danger);  background: rgba(255,71,87,0.07); }
+    #result.healthy  { border-color: var(--success); background: rgba(46,213,115,0.07); }
+    #result.err      { border-color: var(--danger);  background: rgba(255,71,87,0.07); }
+
+    .result-verdict {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .result-verdict.smoking { color: var(--danger); }
+    .result-verdict.healthy { color: var(--success); }
+    .result-verdict.err     { color: var(--danger); }
+
+    .result-prob {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .result-errors { list-style: none; }
+    .result-errors li {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--danger);
+      padding: 3px 0;
+    }
+    .result-errors li::before { content: "× "; }
+
+    /* Spinner */
+    .btn .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(13,13,15,0.3);
+      border-top-color: #0d0d0f;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Neural Network · Body Signal of Smoking</div>
+  <h1>Smoking<span>_</span>Predictor</h1>
+  <p class="subtitle">Введите биомедицинские показатели — модель определит вероятность курения</p>
+</header>
+
+<div class="card">
+  <form id="form" novalidate>
+
+    <!-- Антропометрия -->
+    <div class="section-label">01 / Антропометрия</div>
+    <div class="grid">
+      <div class="field">
+        <label for="gender">Пол</label>
+        <select id="gender" name="gender" required>
+          <option value="">— выберите —</option>
+          <option value="M">M — Мужской</option>
+          <option value="F">F — Женский</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="age">Возраст (лет)</label>
+        <input id="age" name="age" type="number" min="1" max="120" step="1" placeholder="35" required />
+      </div>
+      <div class="field">
+        <label for="height_cm">Рост (см)</label>
+        <input id="height_cm" name="height_cm" type="number" min="50" max="250" step="0.1" placeholder="175" required />
+      </div>
+      <div class="field">
+        <label for="weight_kg">Вес (кг)</label>
+        <input id="weight_kg" name="weight_kg" type="number" min="20" max="300" step="0.1" placeholder="75" required />
+      </div>
+      <div class="field">
+        <label for="waist_cm">Объём талии (см)</label>
+        <input id="waist_cm" name="waist_cm" type="number" min="40" max="200" step="0.1" placeholder="85" required />
+      </div>
+    </div>
+
+    <!-- Зрение -->
+    <div class="section-label">02 / Зрение</div>
+    <div class="grid">
+      <div class="field">
+        <label for="eyesight_left">Зрение — левый глаз</label>
+        <input id="eyesight_left" name="eyesight_left" type="number" min="0" max="2" step="0.1" placeholder="1.0" required />
+        <span class="hint">Диапазон: 0.0 – 2.0</span>
+      </div>
+      <div class="field">
+        <label for="eyesight_right">Зрение — правый глаз</label>
+        <input id="eyesight_right" name="eyesight_right" type="number" min="0" max="2" step="0.1" placeholder="1.0" required />
+        <span class="hint">Диапазон: 0.0 – 2.0</span>
+      </div>
+    </div>
+
+    <!-- Давление и сахар -->
+    <div class="section-label">03 / Давление и кровь</div>
+    <div class="grid">
+      <div class="field">
+        <label for="systolic">Систолическое давление (мм рт. ст.)</label>
+        <input id="systolic" name="systolic" type="number" min="60" max="180" step="1" placeholder="120" required />
+        <span class="hint">Макс. 180</span>
+      </div>
+      <div class="field">
+        <label for="relaxation">Диастолическое давление (мм рт. ст.)</label>
+        <input id="relaxation" name="relaxation" type="number" min="40" max="120" step="1" placeholder="80" required />
+        <span class="hint">Макс. 120</span>
+      </div>
+      <div class="field">
+        <label for="fasting_blood_sugar">Сахар крови натощак (мг/дл)</label>
+        <input id="fasting_blood_sugar" name="fasting_blood_sugar" type="number" min="1" max="350" step="1" placeholder="90" required />
+        <span class="hint">Макс. 350</span>
+      </div>
+      <div class="field">
+        <label for="hemoglobin">Гемоглобин (г/дл)</label>
+        <input id="hemoglobin" name="hemoglobin" type="number" min="1" max="25" step="0.1" placeholder="14.5" required />
+      </div>
+    </div>
+
+    <!-- Липидный профиль и ферменты -->
+    <div class="section-label">04 / Липиды и ферменты</div>
+    <div class="grid">
+      <div class="field">
+        <label for="triglyceride">Триглицериды (мг/дл)</label>
+        <input id="triglyceride" name="triglyceride" type="number" min="1" max="2000" step="1" placeholder="120" required />
+      </div>
+      <div class="field">
+        <label for="HDL">ЛПВП / HDL (мг/дл)</label>
+        <input id="HDL" name="HDL" type="number" min="1" max="300" step="1" placeholder="55" required />
+        <span class="hint">Макс. 300</span>
+      </div>
+      <div class="field">
+        <label for="ALT">АЛТ (МЕ/л)</label>
+        <input id="ALT" name="ALT" type="number" min="1" max="100" step="1" placeholder="25" required />
+        <span class="hint">Макс. 100</span>
+      </div>
+      <div class="field">
+        <label for="Gtp">ГГТ / GTP (МЕ/л)</label>
+        <input id="Gtp" name="Gtp" type="number" min="1" max="2000" step="1" placeholder="30" required />
+      </div>
+    </div>
+
+    <!-- Прочее -->
+    <div class="section-label">05 / Прочее</div>
+    <div class="grid">
+      <div class="field">
+        <label for="tartar">Зубной камень</label>
+        <select id="tartar" name="tartar" required>
+          <option value="">— выберите —</option>
+          <option value="Y">Y — Есть</option>
+          <option value="N">N — Нет</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dental_caries">Кариес</label>
+        <select id="dental_caries" name="dental_caries" required>
+          <option value="">— выберите —</option>
+          <option value="Y">Y — Есть</option>
+          <option value="N">N — Нет</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn" type="submit" id="submit-btn">Определить</button>
+  </form>
+
+  <!-- Результат -->
+  <div id="result"></div>
+</div>
+
+<script>
+  const form   = document.getElementById("form");
+  const btn    = document.getElementById("submit-btn");
+  const result = document.getElementById("result");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Сброс подсветки ошибок
+    document.querySelectorAll(".error").forEach(el => el.classList.remove("error"));
+    result.className = "";
+    result.innerHTML = "";
+
+    // Собираем данные
+    const fd = new FormData(form);
+    const payload = {};
+    const numFields = [
+      "age","height_cm","weight_kg","waist_cm",
+      "eyesight_left","eyesight_right",
+      "systolic","relaxation","fasting_blood_sugar",
+      "triglyceride","HDL","hemoglobin","ALT","Gtp"
+    ];
+
+    let valid = true;
+    for (const [key, val] of fd.entries()) {
+      if (!val) {
+        document.getElementById(key)?.classList.add("error");
+        valid = false;
+        continue;
+      }
+      payload[key] = numFields.includes(key) ? parseFloat(val) : val;
+    }
+
+    if (!valid) {
+      showError(["Заполните все обязательные поля."]);
+      return;
+    }
+
+    // Отправка
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Анализируем...';
+
+    try {
+      const res  = await fetch("/send-data", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        const smoking = data.smoking;
+        result.className = "show " + (smoking ? "smoking" : "healthy");
+        result.innerHTML = `
+          <div class="result-verdict ${smoking ? "smoking" : "healthy"}">
+            ${smoking ? "⚠ Курящий" : "✓ Некурящий"}
+          </div>
+          <div class="result-prob">
+            Вероятность курения: <strong>${(data.probability * 100).toFixed(1)}%</strong>
+          </div>
+        `;
+      } else {
+        const errors = data.detail?.errors ?? [JSON.stringify(data.detail)];
+        showError(errors);
+      }
+    } catch (err) {
+      showError(["Ошибка соединения с сервером."]);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Определить";
+    }
+  });
+
+  function showError(errors) {
+    result.className = "show err";
+    const items = errors.map(e => `<li>${e}</li>`).join("");
+    result.innerHTML = `
+      <div class="result-verdict err">Ошибка</div>
+      <ul class="result-errors">${items}</ul>
+    `;
+  }
+</script>
+</body>
+</html>

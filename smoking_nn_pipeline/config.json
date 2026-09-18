@@ -1,0 +1,9 @@
+{
+  "target_col": "smoking",
+  "test_size": 0.25,
+  "random_state": 9,
+  "batch_size": 128,
+  "threshold": 0.5,
+  "learning_rate": 0.001,
+  "loss_name": "binary_focal_crossentropy"
+}
